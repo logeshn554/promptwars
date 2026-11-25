@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { Leaf, Wind } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Wind } from "lucide-react";
 import { ActionCard } from "@/components/ActionCard";
 import { AirQualityCard } from "@/components/AirQualityCard";
 import { AskAssistant } from "@/components/AskAssistant";
+import { ImpactBanner } from "@/components/ImpactBanner";
 import { ProfileForm } from "@/components/ProfileForm";
 import type {
   ActionCategory,
@@ -21,6 +22,13 @@ const INITIAL_PROFILE: LifestyleProfile = {
   focusGoal: "",
 };
 
+const FILTER_TABS: ReadonlyArray<readonly [ActionCategory | "all", string]> = [
+  ["all", "All"],
+  ["routine", "Daily Routines"],
+  ["indoor_air", "Indoor Air Hacks"],
+  ["sustainable_alt", "Sustainable Alternatives"],
+];
+
 export default function HomePage() {
   const [profile, setProfile] = useState<LifestyleProfile>(INITIAL_PROFILE);
   const [activeFilter, setActiveFilter] = useState<ActionCategory | "all">("all");
@@ -29,25 +37,16 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<AssistantPlanResponse | null>(null);
 
-  const handleProfileChange = useCallback(
-    <K extends keyof LifestyleProfile>(key: K, value: LifestyleProfile[K]) => {
-      setProfile((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
-
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
+  const fetchPlan = useCallback(async (targetProfile: LifestyleProfile) => {
     setLoading(true);
     setError(null);
-
     try {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...profile,
-          focusGoal: profile.focusGoal?.trim() || undefined,
+          ...targetProfile,
+          focusGoal: targetProfile.focusGoal?.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -63,6 +62,22 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    void fetchPlan(INITIAL_PROFILE);
+  }, [fetchPlan]);
+
+  const handleProfileChange = useCallback(
+    <K extends keyof LifestyleProfile>(key: K, value: LifestyleProfile[K]) => {
+      setProfile((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    void fetchPlan(profile);
   }
 
   const toggleCommitment = useCallback((id: string) => {
@@ -77,16 +92,22 @@ export default function HomePage() {
     return plan.recommendations.filter((r) => r.category === activeFilter);
   }, [plan, activeFilter]);
 
+  const selectedActions = useMemo(() => {
+    if (!plan) return [];
+    return plan.recommendations.filter((r) => selectedIds.includes(r.id));
+  }, [plan, selectedIds]);
+
   const impactTotals = useMemo(() => {
-    if (!plan) return { co2: 0, pm25: 0 };
-    const chosen = plan.recommendations.filter((r) => selectedIds.includes(r.id));
-    const co2 = chosen.reduce((sum, item) => sum + item.co2SavedKgPerWeek, 0);
+    const co2 = selectedActions.reduce((sum, item) => sum + item.co2SavedKgPerWeek, 0);
     const pm25 = Math.min(
       85,
-      chosen.reduce((sum, item) => sum + Math.round(item.pm25ReductionPercent * 0.45), 0)
+      selectedActions.reduce(
+        (sum, item) => sum + Math.round(item.pm25ReductionPercent * 0.45),
+        0
+      )
     );
     return { co2: Number(co2.toFixed(1)), pm25 };
-  }, [plan, selectedIds]);
+  }, [selectedActions]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -122,30 +143,12 @@ export default function HomePage() {
           <div aria-live="polite" className="space-y-6">
             <AirQualityCard data={plan.airQuality} />
 
-            <section
-              aria-labelledby="impact-heading"
-              className="rounded-2xl border border-emerald-200 bg-emerald-900 p-5 text-white shadow-sm"
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 id="impact-heading" className="flex items-center gap-2 text-lg font-bold">
-                    <Leaf className="h-5 w-5 text-emerald-300" aria-hidden="true" />
-                    Your Committed Weekly Impact
-                  </h2>
-                  <p className="mt-1 text-sm text-emerald-100">{plan.summary}</p>
-                </div>
-                <div className="flex shrink-0 gap-4">
-                  <div className="rounded-xl bg-emerald-800/80 px-4 py-2.5 text-center">
-                    <p className="text-xs text-emerald-200">CO₂e Avoided</p>
-                    <p className="text-xl font-bold">{impactTotals.co2} kg/wk</p>
-                  </div>
-                  <div className="rounded-xl bg-emerald-800/80 px-4 py-2.5 text-center">
-                    <p className="text-xs text-emerald-200">Indoor PM2.5 Cut</p>
-                    <p className="text-xl font-bold">~{impactTotals.pm25}%</p>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <ImpactBanner
+              plan={plan}
+              selectedActions={selectedActions}
+              co2Saved={impactTotals.co2}
+              pm25Cut={impactTotals.pm25}
+            />
 
             <section aria-labelledby="actions-heading" className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -153,14 +156,7 @@ export default function HomePage() {
                   Tailored Recommendations ({filteredRecommendations.length})
                 </h2>
                 <div role="tablist" aria-label="Filter recommendations" className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      ["all", "All"],
-                      ["routine", "Daily Routines"],
-                      ["indoor_air", "Indoor Air Hacks"],
-                      ["sustainable_alt", "Sustainable Alternatives"],
-                    ] as const
-                  ).map(([key, label]) => (
+                  {FILTER_TABS.map(([key, label]) => (
                     <button
                       key={key}
                       type="button"

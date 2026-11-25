@@ -29,9 +29,11 @@ const CATEGORY_META: Record<
 
 export function ActionCard({ item, selected, onToggle }: ActionCardProps) {
   const meta = CATEGORY_META[item.category];
+  const headingId = `action-title-${item.id}`;
 
   return (
     <article
+      aria-labelledby={headingId}
       className={`rounded-2xl border p-5 transition-colors ${
         selected
           ? "border-emerald-500 bg-emerald-50/40 shadow-sm"
@@ -75,7 +77,9 @@ export function ActionCard({ item, selected, onToggle }: ActionCardProps) {
         </button>
       </div>
 
-      <h3 className="mt-3 text-base font-bold text-slate-900">{item.title}</h3>
+      <h3 id={headingId} className="mt-3 text-base font-bold text-slate-900">
+        {item.title}
+      </h3>
       <p className="mt-1.5 text-sm leading-relaxed text-slate-700">
         {item.description}
       </p>

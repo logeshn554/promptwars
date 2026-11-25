@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const sanitizeText = (val: string) =>
-  val.replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
+  val.replace(/[<>\r\n\t`]/g, " ").replace(/\s+/g, " ").trim();
 
 export const locationQuerySchema = z.object({
   city: z

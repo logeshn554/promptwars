@@ -68,4 +68,43 @@ describe("API route handlers", () => {
     const data = await goodRes.json();
     expect(data.answer).toContain("1:00–3:00 PM");
   });
+
+  it("POST /api/plan rejects invalid input and enforces rate limiting", async () => {
+    const invalidReq = new NextRequest("http://localhost/api/plan", {
+      method: "POST",
+      body: JSON.stringify({ location: "X" }),
+    });
+    const invalidRes = await planPost(invalidReq);
+    expect(invalidRes.status).toBe(400);
+
+    for (let i = 0; i < 20; i += 1) {
+      const req = new NextRequest("http://localhost/api/plan", {
+        method: "POST",
+        headers: { "x-forwarded-for": "192.0.2.1" },
+        body: JSON.stringify({
+          location: "Delhi",
+          householdType: "seniors_sensitive",
+          commuteMode: "remote",
+          heatingSource: "electric_heatpump",
+          homeType: "apartment",
+        }),
+      });
+      const res = await planPost(req);
+      expect(res.status).toBe(200);
+    }
+
+    const throttledReq = new NextRequest("http://localhost/api/plan", {
+      method: "POST",
+      headers: { "x-forwarded-for": "192.0.2.1" },
+      body: JSON.stringify({
+        location: "Delhi",
+        householdType: "seniors_sensitive",
+        commuteMode: "remote",
+        heatingSource: "electric_heatpump",
+        homeType: "apartment",
+      }),
+    });
+    const throttledRes = await planPost(throttledReq);
+    expect(throttledRes.status).toBe(429);
+  });
 });

@@ -60,20 +60,21 @@ export function AskAssistant({ location, aqi }: AskAssistantProps) {
           Ask ClearAir About Winter Smog
         </h2>
       </div>
-      <p className="mt-1 text-sm text-slate-600">
+      <p id="ask-helper" className="mt-1 text-sm text-slate-600">
         Get quick, evidence-based answers tailored to {location}.
       </p>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Suggested smog questions">
         {SAMPLE_QUESTIONS.map((sample) => (
           <button
             key={sample}
             type="button"
+            disabled={loading}
             onClick={() => {
               setQuestion(sample);
               void handleAsk(sample);
             }}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
           >
             {sample}
           </button>
@@ -92,6 +93,7 @@ export function AskAssistant({ location, aqi }: AskAssistantProps) {
         </label>
         <input
           id="smog-question"
+          aria-describedby="ask-helper"
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}

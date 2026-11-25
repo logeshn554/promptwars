@@ -22,7 +22,7 @@ describe("airQualityData & fallbackPlanner", () => {
     expect(first.pm25).toBeGreaterThan(0);
   });
 
-  it("builds 6 tailored recommendations across all 3 categories", () => {
+  it("builds 6 tailored recommendations across all 3 categories and includes focusGoal", () => {
     const aq = getAirQualityForCity("Lahore");
     const plan = buildFallbackPlan(
       {
@@ -31,10 +31,13 @@ describe("airQualityData & fallbackPlanner", () => {
         commuteMode: "car",
         heatingSource: "gas_wood",
         homeType: "house",
+        focusGoal: "safer school runs",
       },
       aq
     );
     expect(plan.recommendations).toHaveLength(6);
+    expect(plan.summary).toContain("safer school runs");
+    expect(plan.summary).toContain("school-run walks");
     const categories = new Set(plan.recommendations.map((r) => r.category));
     expect(categories).toEqual(new Set(["routine", "indoor_air", "sustainable_alt"]));
   });
