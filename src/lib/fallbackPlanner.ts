@@ -5,11 +5,19 @@ import type {
   LifestyleProfile,
 } from "./types";
 
+const HOUSEHOLD_NOTE: Record<LifestyleProfile["householdType"], string> = {
+  family_kids: "Keep children's bedrooms sealed with continuous filtration and shift school-run walks to midday.",
+  seniors_sensitive: "Prioritize N95/FFP2 protection, keep rescue inhalers accessible, and avoid morning cold-air exertion.",
+  young_professionals: "Batch errands into midday breaks and use metro/carpool to cut rush-hour NO2 exposure.",
+  community_organizer: "Share midday ventilation windows with neighbors and organize a school-zone no-idling pledge.",
+};
+
 export function buildFallbackPlan(
   profile: LifestyleProfile,
   airQuality: AirQualityData
 ): { summary: string; recommendations: ActionRecommendation[] } {
   const isSevere = airQuality.aqi >= 151;
+  const householdTip = HOUSEHOLD_NOTE[profile.householdType];
   const recommendations: ActionRecommendation[] = [
     {
       id: "routine-midday-window",
@@ -109,7 +117,7 @@ export function buildFallbackPlan(
     },
   ];
 
-  const summary = `In ${airQuality.city} (AQI ${airQuality.aqi} — ${airQuality.category}), winter inversion is ${airQuality.inversionRisk.toLowerCase()}. Prioritizing midday errands (${airQuality.bestOutdoorWindow}), indoor MERV-13/HEPA filtration, and cleaner ${profile.commuteMode.replace("_", " ")} habits can cut your family's PM2.5 exposure and weekly emissions significantly.`;
+  const summary = `In ${airQuality.city} (AQI ${airQuality.aqi} — ${airQuality.category}), winter inversion is ${airQuality.inversionRisk.toLowerCase()}. ${householdTip} Prioritizing midday errands (${airQuality.bestOutdoorWindow}), indoor MERV-13/HEPA filtration, and cleaner ${profile.commuteMode.replace("_", " ")} habits cuts PM2.5 exposure and weekly emissions.`;
 
   return { summary, recommendations };
 }

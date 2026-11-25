@@ -14,5 +14,10 @@ export async function GET(request: NextRequest) {
   }
 
   const data = getAirQualityForCity(parsed.data.city);
-  return NextResponse.json(data, { status: 200 });
+  return NextResponse.json(data, {
+    status: 200,
+    headers: {
+      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+    },
+  });
 }
