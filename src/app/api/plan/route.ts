@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAirQualityForCity } from "@/lib/airQualityData";
+import { getClientIp, parseJsonBody } from "@/lib/apiHelpers";
 import { generateTailoredPlan } from "@/lib/geminiPlanner";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { lifestyleProfileSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
-  const clientIp =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  const rate = checkRateLimit(`plan:${clientIp}`, 20, 60_000);
+  const rate = checkRateLimit(`plan:${getClientIp(request)}`, 20, 60_000);
 
   if (!rate.allowed) {
     return NextResponse.json(
@@ -16,14 +15,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
-  }
+  const bodyResult = await parseJsonBody(request);
+  if ("error" in bodyResult) return bodyResult.error;
 
-  const parsed = lifestyleProfileSchema.safeParse(body);
+  const parsed = lifestyleProfileSchema.safeParse(bodyResult.data);
   if (!parsed.success) {
     return NextResponse.json(
       {

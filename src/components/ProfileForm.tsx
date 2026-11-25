@@ -6,41 +6,22 @@ import type {
   HeatingSource,
   HomeType,
   HouseholdType,
+  LifestyleProfile,
 } from "@/lib/types";
 
 const QUICK_CITIES = ["Delhi", "Lahore", "Beijing", "London", "Los Angeles"];
 
 interface ProfileFormProps {
-  location: string;
-  setLocation: (val: string) => void;
-  householdType: HouseholdType;
-  setHouseholdType: (val: HouseholdType) => void;
-  commuteMode: CommuteMode;
-  setCommuteMode: (val: CommuteMode) => void;
-  heatingSource: HeatingSource;
-  setHeatingSource: (val: HeatingSource) => void;
-  homeType: HomeType;
-  setHomeType: (val: HomeType) => void;
-  focusGoal: string;
-  setFocusGoal: (val: string) => void;
+  profile: LifestyleProfile;
+  onChange: <K extends keyof LifestyleProfile>(key: K, value: LifestyleProfile[K]) => void;
   loading: boolean;
   error: string | null;
   onSubmit: (e: React.FormEvent) => void;
 }
 
 export function ProfileForm({
-  location,
-  setLocation,
-  householdType,
-  setHouseholdType,
-  commuteMode,
-  setCommuteMode,
-  heatingSource,
-  setHeatingSource,
-  homeType,
-  setHomeType,
-  focusGoal,
-  setFocusGoal,
+  profile,
+  onChange,
   loading,
   error,
   onSubmit,
@@ -68,17 +49,22 @@ export function ProfileForm({
               id="location-input"
               type="text"
               required
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={profile.location}
+              onChange={(e) => onChange("location", e.target.value)}
               className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600"
             />
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <div className="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="Quick city presets">
               {QUICK_CITIES.map((city) => (
                 <button
                   key={city}
                   type="button"
-                  onClick={() => setLocation(city)}
-                  className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                  aria-pressed={profile.location === city}
+                  onClick={() => onChange("location", city)}
+                  className={`rounded-md px-2 py-0.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 ${
+                    profile.location === city
+                      ? "bg-emerald-700 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
                 >
                   {city}
                 </button>
@@ -92,8 +78,8 @@ export function ProfileForm({
             </label>
             <select
               id="household-select"
-              value={householdType}
-              onChange={(e) => setHouseholdType(e.target.value as HouseholdType)}
+              value={profile.householdType}
+              onChange={(e) => onChange("householdType", e.target.value as HouseholdType)}
               className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600"
             >
               <option value="family_kids">Family with children</option>
@@ -109,8 +95,8 @@ export function ProfileForm({
             </label>
             <select
               id="commute-select"
-              value={commuteMode}
-              onChange={(e) => setCommuteMode(e.target.value as CommuteMode)}
+              value={profile.commuteMode}
+              onChange={(e) => onChange("commuteMode", e.target.value as CommuteMode)}
               className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600"
             >
               <option value="car">Private Car</option>
@@ -126,8 +112,8 @@ export function ProfileForm({
             </label>
             <select
               id="heating-select"
-              value={heatingSource}
-              onChange={(e) => setHeatingSource(e.target.value as HeatingSource)}
+              value={profile.heatingSource}
+              onChange={(e) => onChange("heatingSource", e.target.value as HeatingSource)}
               className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600"
             >
               <option value="gas_wood">Gas / Wood / Solid Fuel</option>
@@ -142,8 +128,8 @@ export function ProfileForm({
             </label>
             <select
               id="home-select"
-              value={homeType}
-              onChange={(e) => setHomeType(e.target.value as HomeType)}
+              value={profile.homeType}
+              onChange={(e) => onChange("homeType", e.target.value as HomeType)}
               className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600"
             >
               <option value="apartment">Apartment</option>
@@ -158,8 +144,8 @@ export function ProfileForm({
             <input
               id="goal-input"
               type="text"
-              value={focusGoal}
-              onChange={(e) => setFocusGoal(e.target.value)}
+              value={profile.focusGoal ?? ""}
+              onChange={(e) => onChange("focusGoal", e.target.value)}
               placeholder="e.g., safer school runs"
               maxLength={160}
               className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600"

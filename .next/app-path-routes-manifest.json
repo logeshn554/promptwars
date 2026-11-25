@@ -1,0 +1,8 @@
+{
+  "/api/air-quality/route": "/api/air-quality",
+  "/api/ask/route": "/api/ask",
+  "/api/health/route": "/api/health",
+  "/api/plan/route": "/api/plan",
+  "/_not-found/page": "/_not-found",
+  "/page": "/"
+}

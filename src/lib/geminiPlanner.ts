@@ -8,10 +8,17 @@ import type {
 } from "./types";
 import { aiPlanOutputSchema } from "./validation";
 
+let cachedClient: GoogleGenAI | null = null;
+let cachedKey: string | undefined;
+
 function getClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return null;
-  return new GoogleGenAI({ apiKey });
+  if (!cachedClient || cachedKey !== apiKey) {
+    cachedClient = new GoogleGenAI({ apiKey });
+    cachedKey = apiKey;
+  }
+  return cachedClient;
 }
 
 export async function generateTailoredPlan(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Leaf, Wind } from "lucide-react";
 import { ActionCard } from "@/components/ActionCard";
 import { AirQualityCard } from "@/components/AirQualityCard";
@@ -9,24 +9,32 @@ import { ProfileForm } from "@/components/ProfileForm";
 import type {
   ActionCategory,
   AssistantPlanResponse,
-  CommuteMode,
-  HeatingSource,
-  HomeType,
-  HouseholdType,
+  LifestyleProfile,
 } from "@/lib/types";
 
+const INITIAL_PROFILE: LifestyleProfile = {
+  location: "Delhi",
+  householdType: "family_kids",
+  commuteMode: "car",
+  heatingSource: "gas_wood",
+  homeType: "apartment",
+  focusGoal: "",
+};
+
 export default function HomePage() {
-  const [location, setLocation] = useState("Delhi");
-  const [householdType, setHouseholdType] = useState<HouseholdType>("family_kids");
-  const [commuteMode, setCommuteMode] = useState<CommuteMode>("car");
-  const [heatingSource, setHeatingSource] = useState<HeatingSource>("gas_wood");
-  const [homeType, setHomeType] = useState<HomeType>("apartment");
-  const [focusGoal, setFocusGoal] = useState("");
+  const [profile, setProfile] = useState<LifestyleProfile>(INITIAL_PROFILE);
   const [activeFilter, setActiveFilter] = useState<ActionCategory | "all">("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<AssistantPlanResponse | null>(null);
+
+  const handleProfileChange = useCallback(
+    <K extends keyof LifestyleProfile>(key: K, value: LifestyleProfile[K]) => {
+      setProfile((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -38,12 +46,8 @@ export default function HomePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          location,
-          householdType,
-          commuteMode,
-          heatingSource,
-          homeType,
-          focusGoal: focusGoal.trim() || undefined,
+          ...profile,
+          focusGoal: profile.focusGoal?.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -61,11 +65,11 @@ export default function HomePage() {
     }
   }
 
-  function toggleCommitment(id: string) {
+  const toggleCommitment = useCallback((id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  }
+  }, []);
 
   const filteredRecommendations = useMemo(() => {
     if (!plan) return [];
@@ -107,18 +111,8 @@ export default function HomePage() {
 
       <main id="main-content" className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
         <ProfileForm
-          location={location}
-          setLocation={setLocation}
-          householdType={householdType}
-          setHouseholdType={setHouseholdType}
-          commuteMode={commuteMode}
-          setCommuteMode={setCommuteMode}
-          heatingSource={heatingSource}
-          setHeatingSource={setHeatingSource}
-          homeType={homeType}
-          setHomeType={setHomeType}
-          focusGoal={focusGoal}
-          setFocusGoal={setFocusGoal}
+          profile={profile}
+          onChange={handleProfileChange}
           loading={loading}
           error={error}
           onSubmit={handleGenerate}
@@ -199,7 +193,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <AskAssistant location={location} aqi={plan?.airQuality.aqi} />
+        <AskAssistant location={profile.location} aqi={plan?.airQuality.aqi} />
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-600">

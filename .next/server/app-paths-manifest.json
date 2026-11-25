@@ -1,0 +1,8 @@
+{
+  "/api/air-quality/route": "app/api/air-quality/route.js",
+  "/api/ask/route": "app/api/ask/route.js",
+  "/api/health/route": "app/api/health/route.js",
+  "/api/plan/route": "app/api/plan/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js"
+}
